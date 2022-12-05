@@ -1,0 +1,39 @@
+SELECT player, position, team, goals, wc_goals
+FROM `world-cup-project-370619.World_cup.2022_world_cup_squads`
+ORDER BY team, goals DESC;
+
+--Total world cup goals by team
+SELECT SUM(wc_goals) as team_wc_goals,
+team
+FROM `world-cup-project-370619.World_cup.2022_world_cup_squads`
+GROUP BY team
+ORDER BY team_wc_goals DESC;
+
+--A join that allows viewing teams by total team world cup goals and FIFA ranking
+SELECT squ.team, FIFA_ranking, SUM(wc_goals) as team_wc_goals 
+FROM `world-cup-project-370619.World_cup.2022_world_cup_squads` squ
+INNER JOIN `world-cup-project-370619.World_cup.2022_world_cup_groups` gro
+ON squ.team = gro.team
+GROUP BY squ.team, FIFA_Ranking
+ORDER BY FIFA_Ranking;
+
+--Total World Cup Wins by Team
+SELECT winner as team, COUNT(winner) as total_wc_wins, 
+FROM `World_cup.world_cups`
+GROUP BY team
+ORDER BY total_wc_wins DESC;
+
+--Top WC Goal Scorers By Team
+SELECT wc_goals, Player,
+team, goals
+FROM `world-cup-project-370619.World_cup.2022_world_cup_squads`
+ORDER BY wc_goals DESC
+LIMIT 10;
+
+--Average player age per team by FIFA ranking
+SELECT squ.team, FIFA_ranking, AVG(age) as avg_player_age
+FROM `world-cup-project-370619.World_cup.2022_world_cup_squads` squ
+INNER JOIN `world-cup-project-370619.World_cup.2022_world_cup_groups` gro
+ON squ.team = gro.team
+GROUP BY squ.team, FIFA_Ranking
+ORDER BY FIFA_Ranking;
