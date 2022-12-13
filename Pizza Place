@@ -1,0 +1,101 @@
+--Number of pizzas ordered by pizza type
+SELECT COUNT(quantity) as num_pizza_ordered, pizza_id
+FROM `pizza-371301.Pizza_Place.order_details`
+GROUP BY pizza_id
+ORDER BY num_pizza_ordered DESC;
+
+--Total earnings per pizza type
+SELECT SUM(price) as total_earnings, piz.pizza_id
+FROM `pizza-371301.Pizza_Place.pizzas` as piz
+INNER JOIN `pizza-371301.Pizza_Place.order_details` as det
+ON piz.pizza_id=det.pizza_id
+GROUP BY piz.pizza_id
+ORDER BY total_earnings DESC;
+
+--Total earnings per pizza type with proper names
+SELECT SUM(price) as total_earnings, piz.pizza_id, pt.string_field_1
+FROM pizza-371301.Pizza_Place.pizzas as piz
+INNER JOIN pizza-371301.Pizza_Place.order_details as det
+ON piz.pizza_id=det.pizza_id
+INNER JOIN pizza-371301.Pizza_Place.pizza_types as pt
+ON piz.pizza_type_id=pt.pizza_type_id
+GROUP BY piz.pizza_id, pt.string_field_1
+ORDER BY total_earnings DESC;
+
+--Top earning pizza by type(all sizes)
+SELECT SUM(price) as total_earnings, pt.string_field_1
+FROM pizza-371301.Pizza_Place.pizzas as piz
+INNER JOIN pizza-371301.Pizza_Place.order_details as det
+ON piz.pizza_id=det.pizza_id
+INNER JOIN pizza-371301.Pizza_Place.pizza_types as pt
+ON piz.pizza_type_id=pt.pizza_type_id
+GROUP BY pt.string_field_1
+ORDER BY total_earnings DESC;
+
+
+--Top selling pizza type by date and size
+SELECT pizza_id, size, date, total_quantity
+FROM (
+SELECT det.pizza_id, piz.size, ord.date, SUM(det.quantity) AS total_quantity,
+ROW_NUMBER() OVER (PARTITION BY ord.date ORDER BY SUM(det.quantity) DESC) AS rank
+FROM `pizza-371301.Pizza_Place.orders` ord
+INNER JOIN `pizza-371301.Pizza_Place.order_details` det
+ON ord.order_id = det.order_id
+INNER JOIN `pizza-371301.Pizza_Place.pizzas` piz
+ON det.pizza_id = piz.pizza_id
+GROUP BY ord.date, det.pizza_id, piz.size
+)
+WHERE rank = 1
+ORDER BY date;
+
+--Top Selling Pizza by Date, Name, and Size
+SELECT pizza_id, size, string_field_1, date, total_quantity
+FROM (
+SELECT det.pizza_id, piz.size, pt.string_field_1, ord.date, SUM(det.quantity) AS total_quantity,
+ROW_NUMBER() OVER (PARTITION BY ord.date ORDER BY SUM(det.quantity) DESC) AS rank
+FROM `pizza-371301.Pizza_Place.orders` ord
+INNER JOIN `pizza-371301.Pizza_Place.order_details` det
+ON ord.order_id = det.order_id
+INNER JOIN `pizza-371301.Pizza_Place.pizzas` piz
+ON det.pizza_id = piz.pizza_id
+INNER JOIN `pizza-371301.Pizza_Place.pizza_types` pt
+ON piz.pizza_type_id = pt.pizza_type_id
+GROUP BY ord.date, det.pizza_id, piz.size, pt.string_field_1
+)
+WHERE rank = 1
+ORDER BY date;
+
+--Total pizzas sold by date
+SELECT date, SUM(total_quantity) AS total_pizzas_sold
+FROM (
+SELECT det.pizza_id, ord.date, SUM(det.quantity) AS total_quantity,
+ROW_NUMBER() OVER (PARTITION BY ord.date ORDER BY SUM(det.quantity) DESC) AS rank
+FROM pizza-371301.Pizza_Place.orders ord
+INNER JOIN pizza-371301.Pizza_Place.order_details det
+ON ord.order_id = det.order_id
+GROUP BY ord.date, det.pizza_id
+)
+WHERE rank = 1
+GROUP BY date
+ORDER BY total_pizzas_sold DESC;
+
+--Total pizzas sold by day of the week
+SELECT EXTRACT(DAYOFWEEK FROM date) AS day_of_week, SUM(total_quantity) AS total_pizzas_sold
+FROM (
+SELECT det.pizza_id, ord.date, SUM(det.quantity) AS total_quantity,
+ROW_NUMBER() OVER (PARTITION BY ord.date ORDER BY SUM(det.quantity) DESC) AS rank
+FROM pizza-371301.Pizza_Place.orders ord
+INNER JOIN pizza-371301.Pizza_Place.order_details det
+ON ord.order_id = det.order_id
+GROUP BY ord.date, det.pizza_id
+)
+WHERE rank = 1
+GROUP BY day_of_week
+ORDER BY total_pizzas_sold DESC
+;
+
+--Peak order times by hour
+SELECT EXTRACT(HOUR FROM time) AS hour, COUNT(*) AS total_orders
+FROM pizza-371301.Pizza_Place.orders
+GROUP BY hour
+ORDER BY total_orders DESC
